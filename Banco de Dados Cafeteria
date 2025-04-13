@@ -1,0 +1,56 @@
+CREATE DATABASE cafe_aroma;
+USE cafe_aroma;
+
+CREATE TABLE produtos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    descricao TEXT,
+    preco DECIMAL(10, 2) NOT NULL,
+    categoria ENUM('Bebida', 'Comida', 'Sobremesa') NOT NULL,
+    disponivel BOOLEAN DEFAULT TRUE,
+    data_cadastro DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE pedidos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    cliente_nome VARCHAR(100) NOT NULL,
+    data_pedido DATETIME DEFAULT CURRENT_TIMESTAMP,
+    status ENUM('Recebido', 'Em preparo', 'Pronto', 'Entregue', 'Cancelado') DEFAULT 'Recebido',
+    total DECIMAL(10, 2) DEFAULT 0.00,
+    observacoes TEXT
+);
+
+CREATE TABLE itens_pedido (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    pedido_id INT NOT NULL,
+    produto_id INT NOT NULL,
+    quantidade INT NOT NULL DEFAULT 1,
+    preco_unitario DECIMAL(10, 2) NOT NULL,
+    observacoes TEXT,
+    FOREIGN KEY (pedido_id) REFERENCES pedidos(id) ON DELETE CASCADE,
+    FOREIGN KEY (produto_id) REFERENCES produtos(id)
+);
+
+
+INSERT INTO produtos (nome, descricao, preco, categoria) VALUES
+('Café Expresso', 'Café puro e encorpado, preparado sob alta pressão', 5.50, 'Bebida'),
+('Croissant', 'Folhado francês tradicional, crocante por fora e macio por dentro', 8.00, 'Comida'),
+('Torta de Limão', 'Torta cremosa com base de biscoito e cobertura de merengue', 12.50, 'Sobremesa');
+
+INSERT INTO pedidos (cliente_nome, status, total) VALUES
+('João Silva', 'Entregue', 13.50),
+('Maria Oliveira', 'Em preparo', 20.50),
+('Carlos Souza', 'Recebido', 5.50);
+
+INSERT INTO itens_pedido (pedido_id, produto_id, quantidade, preco_unitario) VALUES
+(1, 1, 1, 5.50),  -- João pediu 1 Café Expresso
+(1, 2, 1, 8.00),   -- João pediu 1 Croissant
+(2, 1, 2, 5.50),   -- Maria pediu 2 Cafés Expresso
+(2, 3, 1, 12.50),  -- Maria pediu 1 Torta de Limão
+(3, 1, 1, 5.50);   -- Carlos pediu 1 Café Expresso
+
+UPDATE pedidos SET total = (
+    SELECT SUM(quantidade * preco_unitario)
+    FROM itens_pedido
+    WHERE pedido_id = pedidos.id
+);
